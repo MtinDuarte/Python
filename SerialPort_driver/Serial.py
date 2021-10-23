@@ -15,10 +15,14 @@ class SerialPort:
         #Linux default port
         self.ttyUSBport= '/dev/ttyUSB0'
 
+        # Serial port default parameters
         self.seqNo     = 0
         self.parity    = PARITY_NONE
         self.baudrate  = 115200
         self.timeout   = 1
+        self.stopbits  = STOPBITS_ONE
+        self.bytesize  = EIGHTBITS
+
     # Advance SeqNum for serial transfer enumeration [ Private method ]
     def __AdvanceSeqNum(self,seqNo=0):
         self.seqNo = seqNo
@@ -26,6 +30,7 @@ class SerialPort:
         self.seqNo = self.seqNo + 1
 
         return self.seqNo
+
     # Open serial port over windows SO   
     def OpenSerialWin(self,port,baudrate,timeout,parity,stopbits,bytesize):
         self.COMport = port
@@ -49,6 +54,7 @@ class SerialPort:
                                  #exclusive=         None
                                  )
         return port_obj
+
     # Open serial port over linux SO
     def OpenSerialLnx(self,port,baudrate,timeout,parity,stopbits,bytesize):
         self.COMport = port
@@ -72,6 +78,7 @@ class SerialPort:
                                  exclusive=None
                                 )
         return port_obj
+
     # Read bytes over serial port
     def ReadBytes_OverSerial(self,port):
         
@@ -82,15 +89,19 @@ class SerialPort:
             return BytesRead
         else:
             print("Error while reading serial port")
+
     # Write bytes over serial port
     def WriteBytes_OverSerial(self,port,frame):
         self.port = port
         self.frame = frame
         port.write(bytes(frame))
         #self.port(serial.to_bytes(frame))
+        
+    # Build example frame
+    def BuildFrame(self,port):
 
-
-    def SendStartManufactureMode(self,port):
+        # the frame will have this structure as an example:
+        #   STX + MSG_LEN + SeqNo + CmdId + DstId + Payload + ETX 
 
         #Internals
         self.port       = port
@@ -119,9 +130,6 @@ class SerialPort:
 
         return frame
 
-
-
-
 class Main:
     def __init__(self):
         pass
@@ -131,7 +139,7 @@ class Main:
         SerialObj = SerialPort()    #Create serial port object
         
         if (SO == 'Win'):   #   Test if SO is windows.
-            port_obj = SerialObj.OpenSerialWin( port     = 'COM4',             
+            port_obj = SerialObj.OpenSerialWin( port     = 'COM4',              # Open serial port     
                                                 baudrate = 115200,
                                                 timeout  = 1,
                                                 parity   = PARITY_NONE,
@@ -139,7 +147,7 @@ class Main:
                                                 bytesize = serial.EIGHTBITS,
                                             )  
         else:               #   Write over Linux port
-            port_obj = SerialObj.OpenSerialLnx( port     = '/dev/ttyUSB0',             
+            port_obj = SerialObj.OpenSerialLnx( port     = '/dev/ttyUSB0',      # Open serial port
                                                 baudrate = 115200,
                                                 timeout  = 1,
                                                 parity   = PARITY_NONE,
@@ -150,8 +158,11 @@ class Main:
         while (True):
             try:
                 if port_obj.isOpen():
-                    StartMfFrame=SerialObj.SendStartManufactureMode(port_obj)
-                    SerialObj.WriteBytes_OverSerial(port_obj,StartMfFrame)
+                    #Perform Read / Write operation
+                    ExampleFrame=SerialObj.BuildFrame(port_obj)
+                    
+                    # Perform Write operation
+                    SerialObj.WriteBytes_OverSerial(port_obj,ExampleFrame)
                 else:
                     print("Couldn't write over serial, check if the port is closed")
             
